@@ -1,35 +1,24 @@
 #ifndef hardware_h
 #define hardware_h
-// LED settings.
-typedef enum
-  {
-    LED_OFF,
-    LED_ON,
-    LED_NUMBER_OF_SETTINGS
-  } led_setting;
-// Motor settings.
-typedef enum
-  {
-    MOTOR_CLOSING,
-    MOTOR_OFF,
-    MOTOR_OPENING,
-    MOTOR_NUMBER_OF_SETTINGS
-  } motor_setting;
+// Payment
 // Events.
 typedef enum
   {
-    CLOSE_BUTTON_PRESSED,
-    CLOSED_DETECTED,
-    OPEN_BUTTON_PRESSED,
-    OPENED_DETECTED,
-    NUMBER_OF_EVENTS
-} event;
-// Functions for controlling the LED Indicators.
+    ORDER_RECEIVED
+    VALID_PAYMENT,
+    REJECT_PAYMENT,
+    FAILED_MANF, //All requested replicas were not manufactured
+    PASS_MANF,
+    DELIVERY_CONFIRMED,
+    NOT_DELIVERED
+  } event;
+
 void
-set_closed_indicator(led_setting value);
+get_payment_method();
 void
-set_opened_indicator(led_setting value);
-// Functions for controlling the Motor.
+dispatch_factory_lines();
 void
-set_motor(motor_setting value);
+shut_down_factory_lines();
+void
+get_address();
 #endif
