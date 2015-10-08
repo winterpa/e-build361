@@ -20,19 +20,31 @@ int main()
   {
   	if (strcmp(user_input,"O") == 0)
   	{
-  		handle_event(OPENED_DETECTED);
+  		handle_event(ORDER_RECEIVED);
   	}
-  	else if (strcmp(user_input,"C") == 0)
+  	else if (strcmp(user_input,"V") == 0)
   	{
-  		handle_event(CLOSED_DETECTED);
+  		handle_event(VALID_PAYMENT);
   	}
-  	else if (strcmp(user_input,"o") == 0)
+  	else if (strcmp(user_input,"I") == 0)
   	{
-  		handle_event(OPEN_BUTTON_PRESSED);
+  		handle_event(REJECT_PAYMENT);
   	}
-  	else if (strcmp(user_input,"c") == 0)
+  	else if (strcmp(user_input,"F") == 0)
   	{
-  		handle_event(CLOSE_BUTTON_PRESSED);
+  		handle_event(FAILED_MANF);
+  	}
+	else if (strcmp(user_input,"C") == 0)
+  	{
+  		handle_event(PASS_MANF);
+  	}
+  	else if (strcmp(user_input,"R") == 0)
+  	{
+  		handle_event(DELIVERY_CONFIRMED);
+  	}
+  	else if (strcmp(user_input,"L") == 0)
+  	{
+  		handle_event(NOT_DELIVERED);
   	}
 	else
 	{
