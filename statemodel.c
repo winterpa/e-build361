@@ -6,7 +6,7 @@
 #include "statemodel.h"
 
 //Define the initial state.
-static state_t* current_state = &opened;
+static state_t* current_state = &accepting;
 
 void handle_event( event current_event)
 {
@@ -15,17 +15,26 @@ void handle_event( event current_event)
 	next_state = NULL;
 	switch(current_event) //exit current_state and have the appropriate effect
 	{
-		case CLOSE_BUTTON_PRESSED:
-			next_state = current_state->close_button_pressed();
+		case ORDER_RECEIVED:
+			next_state = current_state->order_received();
 			break;
-		case CLOSED_DETECTED:
-			next_state = current_state->close_detected();
+		case VALID_PAYMENT:
+			next_state = current_state->valid_payment();
 			break;
-		case OPEN_BUTTON_PRESSED:
-			next_state = current_state->open_button_pressed();
+		case REJECT_PAYMENT:
+			next_state = current_state->reject_payment();
 			break;
-		case OPENED_DETECTED:
-			next_state = current_state->opened_detected();
+		case FAILED_MANF:
+			next_state = current_state->failed_manf();
+			break;
+		case PASS_MANF:
+			next_state = current_state->pass_manf();
+			break;
+		case DELIVERY_CONFIRMED:
+			next_state = current_state->delivery_confirmed();
+			break;
+		case NOT_DELIVERED:
+			next_state = current_state->not_delivered();
 			break;
 	}
 

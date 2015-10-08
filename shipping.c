@@ -7,13 +7,13 @@
 
 // Create the object of the opening state.
 state_t shipping = {
-	default_event_handler, //received
 	default_event_handler, //order_received
-	default_event_handler, //manuf_completed
-	default_event_handler, //manuf_failed
-	default_event_handler, //invalid_payment
 	default_event_handler, //valid_payment
-	default_event_handler, //lost_package
+	default_event_handler, //invalid_payment
+	default_event_handler, //failed_manf
+	default_event_handler, //pass_manf
+	default_event_handler, //delivery_confirmed
+	default_event_handler, //not_delivered
 	entry_to,
 	exit_from
 };

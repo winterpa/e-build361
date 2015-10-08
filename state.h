@@ -12,13 +12,13 @@ typedef void action(void);
 
 //Define the format of a state struct.
 struct state {
-	event_handler* 	received;
 	event_handler* 	order_received;
-	event_handler* 	manuf_completed;
-	event_handler*	manuf_failed
 	event_handler*	invalid_payment;
 	event_handler*  valid_payment;
-	event_handler* 	lost_package;
+	event_handler*	failed_manf;
+	event_handler* 	pass_manf;
+	event_handler*	delivery_confirmed
+	event_handler*	not_delivered;
 	action* 		entry_to;
 	action*			exit_from;
 };
