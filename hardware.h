@@ -1,8 +1,16 @@
 #ifndef hardware_h
 #define hardware_h
-// Payment
-// Events.
+
 typedef enum
+  {
+    DONE,
+    LOST,
+    FAIL,
+    NUM_STATS
+  } stats;
+
+
+typedef enum 
   {
     ORDER_RECEIVED
     VALID_PAYMENT,
@@ -10,7 +18,8 @@ typedef enum
     FAILED_MANF, //All requested replicas were not manufactured
     PASS_MANF,
     DELIVERY_CONFIRMED,
-    NOT_DELIVERED
+    NOT_DELIVERED,
+    NUM_EVENTS
   } event;
 
 void
@@ -21,4 +30,8 @@ void
 shut_down_factory_lines();
 void
 get_address();
+void
+update_stats();
+void
+charge_client();
 #endif
