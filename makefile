@@ -1,5 +1,5 @@
-driver: driver.o statemodel.o hardware.o state.o closed.o closing.o opened.o opening.o
-	gcc driver.o statemodel.o hardware.o state.o closed.o closing.o opened.o opening.o -o driver
+driver: driver.o statemodel.o hardware.o state.o accepting.o shipping.o processing.o manufacturing.o
+	gcc driver.o statemodel.o hardware.o state.o accepting.o shipping.o processing.o manufacturing.o -o driver
 
 driver.o: driver.c hardware.h statemodel.h
 	gcc -c driver.c
@@ -13,17 +13,17 @@ statemodel.o: hardware.h statemodel.h statemodel.c
 state.o: state.h state.c
 	gcc -c state.c -o state.o
 	
-closed.o: state.h closed.h closed.c
-	gcc -c closed.c
+accepting.o: state.h accepting.h accepting.c
+	gcc -c accepting.c
 
-closing.o: state.h closing.h closing.c
-	gcc -c closing.c
+shipping.o: state.h shipping.h shipping.c
+	gcc -c shipping.c
 
-opened.o: state.h opened.h opened.c
-	gcc -c opened.c
+processing.o: state.h processing.h processing.c
+	gcc -c processing.c
 
-opening.o: state.h opening.h opening.c
-	gcc -c opening.c
+manufacturing.o: state.h manufacturing.h manufacturing.c
+	gcc -c manufacturing.c
 
 clean:
 	rm *.o ; rm driver 
