@@ -1,5 +1,5 @@
-#ifndef closed_h
-#define closed_h
+#ifndef processing_h
+#define processing_h
 
 #include "state.h"
 

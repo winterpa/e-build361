@@ -1,5 +1,5 @@
-#ifndef opened_h
-#define opened_h
+#ifndef shipping_h
+#define shipping_h
 
 #include "state.h"
 

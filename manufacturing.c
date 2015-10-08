@@ -1,18 +1,21 @@
-#ifndef closing_c
-#define closing_c
+#ifndef manufacturing_c
+#define manufacturing_c
 
-#include "closing.h"
+#include "manufacturing.h"
 #include "hardware.h"
 #include "statemodel.h" // For the other states
 
 // Create the object of the closing state.
-state_t closing = {
-	default_event_handler,
-	closed_detected,
-	open_button_pressed,
-	default_event_handler,
+state_t manufacturing = {
+	default_event_handler, //received
+	default_event_handler, //order_received
+	default_event_handler, //manuf_completed
+	default_event_handler, //manuf_failed
+	default_event_handler, //invalid_payment
+	default_event_handler, //valid_payment
+	default_event_handler, //lost_package
 	entry_to,
-	default_action,
+	exit_from
 };
 
 state_t* closed_detected()

@@ -1,5 +1,5 @@
-#ifndef closing_h
-#define closing_h
+#ifndef manufacturing_h
+#define manufacturing_h
 
 #include "state.h"
 
