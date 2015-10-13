@@ -7,6 +7,7 @@
 
 // Create the object of the opening state.
 state_t shipping = {
+	"Shipping",
 	default_event_handler, //order_received
 	default_event_handler, //valid_payment
 	default_event_handler, //invalid_payment

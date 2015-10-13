@@ -12,6 +12,7 @@ typedef void action(void);
 
 //Define the format of a state struct.
 struct state {
+	char*		state_name;
 	event_handler* 	order_received;
 	event_handler*  valid_payment;
 	event_handler*	invalid_payment;

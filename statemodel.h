@@ -12,7 +12,7 @@
 // actually allocated) elsewhere (i.e., in the .c files for the
 // individual states).
 
-#define LIMIT 10
+#define LIMIT 3
 
 extern uint8_t attempts;
 

@@ -2,6 +2,7 @@
 #define statemodel_c
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "statemodel.h"
 
@@ -44,6 +45,7 @@ void handle_event( event current_event)
 		current_state = next_state;	// Changes states
 		current_state->entry_to();	// enter the new state
 	}
+	printf("State: %s\n", current_state->state_name);
 }
 
 #endif
