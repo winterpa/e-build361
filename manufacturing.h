@@ -4,8 +4,8 @@
 #include "state.h"
 
 // Declare all of the functions performed when in the closing state.
-static state_t* closed_detected();
-static state_t* open_button_pressed();
+static state_t* failed_manf();
+static state_t* pass_mnaf();
 static void 	entry_to();
-
+static void	exit_from();
 #endif

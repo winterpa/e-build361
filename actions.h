@@ -11,7 +11,7 @@ typedef enum
 
 typedef enum 
 {
-  ORDER_RECEIVED
+  ORDER_RECEIVED,
   VALID_PAYMENT,
   REJECT_PAYMENT,
   FAILED_MANF, //All requested replicas were not manufactured
@@ -33,4 +33,8 @@ void
 update_stats(stats status);
 void
 charge_client();
+void
+start_warranty();
+void
+refund();
 #endif

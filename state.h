@@ -17,7 +17,7 @@ struct state {
 	event_handler*	invalid_payment;
 	event_handler*	failed_manf;
 	event_handler* 	pass_manf;
-	event_handler*	delivery_confirmed
+	event_handler*	delivery_confirmed;
 	event_handler*	not_delivered;
 	action* 		entry_to;
 	action*			exit_from;

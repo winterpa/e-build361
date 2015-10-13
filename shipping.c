@@ -12,26 +12,29 @@ state_t shipping = {
 	default_event_handler, //invalid_payment
 	default_event_handler, //failed_manf
 	default_event_handler, //pass_manf
-	default_event_handler, //delivery_confirmed
-	default_event_handler, //not_delivered
+	delivery_confirmed, //delivery_confirmed
+	not_delivered, //not_delivered
 	entry_to,
-	exit_from
+	default_action
 };
 
-state_t* close_button_pressed()
+state_t* delivery_confirmed()
 {
-	exit_from();
-	return &closing;
+  start_warranty();
+  update_stats(DONE);
+  return &accepting;
+}
+
+state_t* not_delivered()
+{
+  refund();
+  update_stats(LOST);
+  return &accepting;
 }
 
 void entry_to()
 {
-	set_opened_indicator( LED_ON );
-}
-
-void exit_from()
-{
-	set_opened_indicator( LED_OFF );
+  get_address();
 }
 
 #endif
