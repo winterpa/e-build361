@@ -2,7 +2,7 @@
 #define accepted_c
 
 #include "accepted.h"
-#include "hardware.h"
+#include "actions.h"
 #include "statemodel.h" //For the other states
 
 // Create the object of the opening state.

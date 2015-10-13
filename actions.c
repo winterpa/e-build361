@@ -1,10 +1,10 @@
-#ifndef hardware_c
-#define hardware_c
+#ifndef actions_c
+#define actions_c
 
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "hardware.h"
+#include "actions.h"
 
 void get_payment_method()
 {
@@ -26,7 +26,7 @@ void get_address()
 
 }
 
-void update_stats()
+void update_stats(stats status)
 {
 
 }

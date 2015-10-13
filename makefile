@@ -1,13 +1,13 @@
-driver: driver.o statemodel.o hardware.o state.o accepting.o shipping.o processing.o manufacturing.o
-	gcc driver.o statemodel.o hardware.o state.o accepting.o shipping.o processing.o manufacturing.o -o driver
+driver: driver.o statemodel.o actions.o state.o accepting.o shipping.o processing.o manufacturing.o
+	gcc driver.o statemodel.o actions.o state.o accepting.o shipping.o processing.o manufacturing.o -o driver
 
-driver.o: driver.c hardware.h statemodel.h
+driver.o: driver.c actions.h statemodel.h
 	gcc -c driver.c
 
-hardware.o: hardware.c hardware.h
-	gcc -c hardware.c -o hardware.o
+actions.o: actions.c actions.h
+	gcc -c actions.c -o actions.o
 
-statemodel.o: hardware.h statemodel.h statemodel.c 
+statemodel.o: actions.h statemodel.h statemodel.c 
 	gcc -c statemodel.c
 
 state.o: state.h state.c

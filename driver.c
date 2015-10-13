@@ -34,10 +34,10 @@ int main()
   	{
   		handle_event(CLOSE_BUTTON_PRESSED);
   	}
-	else
-	{
-		
-	}
+  	else
+  	{
+  		
+  	}
   	scanf("%s", user_input);
   }
 }

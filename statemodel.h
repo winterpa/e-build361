@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#include "hardware.h"
+#include "actions.h"
 #include "state.h"
 
 //Declare all of the states used in the state model.
