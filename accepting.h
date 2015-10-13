@@ -1,5 +1,5 @@
-#ifndef accepted_h
-#define accepted_h
+#ifndef accepting_h
+#define accepting_h
 
 #include "state.h"
 

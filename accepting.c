@@ -1,7 +1,7 @@
-#ifndef accepted_c
-#define accepted_c
+#ifndef accepting_c
+#define accepting_c
 
-#include "accepted.h"
+#include "accepting.h"
 #include "actions.h"
 #include "statemodel.h" //For the other states
 
