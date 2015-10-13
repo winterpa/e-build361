@@ -18,20 +18,12 @@ state_t accepted = {
 	exit_from
 };
 
-state_t* close_button_pressed()
+state_t* order_rcvd()
 {
-	return &closing;
+	attempts = 0;
+	return &processing;
 }
+static state_t* order_rcvd();
 
-state_t* opened_detected()
-{
-	set_motor( MOTOR_OFF );
-	return &opened;
-}
 
-void entry_to()
-{
-	set_motor( MOTOR_OPENING );
-}
-
-#endif
+#end
