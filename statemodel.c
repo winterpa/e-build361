@@ -7,6 +7,7 @@
 
 //Define the initial state.
 static state_t* current_state = &accepting;
+uint8_t attempts = 0;
 
 void handle_event( event current_event)
 {

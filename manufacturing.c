@@ -22,7 +22,7 @@ state_t* pass_manf()
 {
   exit_from();
   charge_client();
-  return &shippping;
+  return &shipping;
 }
 
 state_t* failed_manf()

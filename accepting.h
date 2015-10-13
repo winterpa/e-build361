@@ -4,6 +4,6 @@
 #include "state.h"
 
 //Declare all of the functions performed when in the accepting state.
-static state_t* order_rcvd();
+static state_t* order_received();
 
 #endif

@@ -15,7 +15,7 @@ state_t processing = {
 	default_event_handler, //delivery_confirmed
 	default_event_handler, //not_delivered
 	entry_to,
-	deafult_action
+	default_action
 };
 
 state_t* valid_payment()
@@ -25,7 +25,16 @@ state_t* valid_payment()
 
 state_t* invalid_payment()
 {
-  
+  if (attempts >= LIMIT)
+  {
+    attempts = 0;
+    return &accepting;
+  }
+  else
+  {
+    attempts++;
+    return &processing;
+  }
 }
 
 void entry_to()

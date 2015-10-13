@@ -19,8 +19,8 @@ struct state {
 	event_handler* 	pass_manf;
 	event_handler*	delivery_confirmed;
 	event_handler*	not_delivered;
-	action* 		entry_to;
-	action*			exit_from;
+	action*		entry_to;
+	action*		exit_from;
 };
 
 // Declare variables to hold pointers to the default event handler and
