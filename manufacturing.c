@@ -7,7 +7,6 @@
 
 // Create the object of the closing state.
 state_t manufacturing = {
-	"Manufacturing",
 	default_event_handler, //order_received
 	default_event_handler, //valid_payment
 	default_event_handler, //invalid_payment
@@ -16,7 +15,8 @@ state_t manufacturing = {
 	default_event_handler, //delivery_confirmed
 	default_event_handler, //not_delivered
 	entry_to,
-	exit_from
+	exit_from,
+	"Manufacturing"
 };
 
 state_t* pass_manf()

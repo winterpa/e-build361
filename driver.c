@@ -14,9 +14,10 @@ int main()
   char* valid_event;
 
   cur_state = " ";
+  printf("Input character to change state.\n");
   scanf("%s", &user_input[0]);
 
-  while (strcmp(user_input,"x")!=0)
+  while (strcmp(user_input,"X")!=0)
   {
   	if (strcmp(user_input,"O") == 0)
   	{

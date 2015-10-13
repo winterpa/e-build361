@@ -12,7 +12,6 @@ typedef void action(void);
 
 //Define the format of a state struct.
 struct state {
-	char*		state_name;
 	event_handler* 	order_received;
 	event_handler*  valid_payment;
 	event_handler*	invalid_payment;
@@ -22,6 +21,7 @@ struct state {
 	event_handler*	not_delivered;
 	action*		entry_to;
 	action*		exit_from;
+	char*		state_name;
 };
 
 // Declare variables to hold pointers to the default event handler and
