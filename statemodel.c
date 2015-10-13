@@ -22,7 +22,7 @@ void handle_event( event current_event)
 			next_state = current_state->valid_payment();
 			break;
 		case REJECT_PAYMENT:
-			next_state = current_state->reject_payment();
+			next_state = current_state->invalid_payment();
 			break;
 		case FAILED_MANF:
 			next_state = current_state->failed_manf();

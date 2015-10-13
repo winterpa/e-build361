@@ -8,9 +8,9 @@
 // Create the object of the closing state.
 state_t manufacturing = {
 	default_event_handler, //order_received
-	valid_payment, //valid_payment
+	default_event_handler, //valid_payment
 	default_event_handler, //invalid_payment
-	default_event_handler, //failed_manf
+	failed_manf, //failed_manf
 	pass_manf, //pass_manf
 	default_event_handler, //delivery_confirmed
 	default_event_handler, //not_delivered
@@ -20,23 +20,26 @@ state_t manufacturing = {
 
 state_t* pass_manf()
 {
-	set_motor( MOTOR_OFF );
-	return &closed;
+  exit_from();
+  charge_client();
+  return &shippping;
 }
 
-state_t* valid_payment()
+state_t* failed_manf()
 {
-	return &opening;
+  exit_from();
+  update_stats(FAIL);
+  return &accepting;
 }
 
 void entry_to()
 {
-	
+  dispatch_factory_lines();  
 }
 
 void exit_from()
 {
-	shut_down_factory_lines();
+  shut_down_factory_lines();
 }
 
 #endif

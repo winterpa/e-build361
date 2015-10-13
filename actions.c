@@ -16,6 +16,7 @@ void dispatch_factory_lines()
 
 }
 
+
 void shut_down_factory_lines()
 {
 
@@ -32,6 +33,16 @@ void update_stats(stats status)
 }
 
 void charge_client()
+{
+
+}
+
+void start_warranty()
+{
+
+}
+
+void refund()
 {
 
 }
