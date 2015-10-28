@@ -3,8 +3,12 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
+#include <pthread.h>
 
 #include "actions.h"
+
+int cur_order_size;
 
 void get_payment_method()
 {
@@ -14,8 +18,40 @@ void get_payment_method()
 void dispatch_factory_lines()
 {
 	printf("Factory lines dispatched.\n");
+	/* Seed the random number generator with the current time */
+	srand(time(NULL));
+	
+	int order_size;
+	thread_args t_args;
+	t_args = malloc(sizeof(thread_args));
+
+	/* Assign a random number between 1000 and 2000 (inclusive)*/
+	order_size = (rand() % 1001) + 1000;
+	cur_order_size = 0;
+
+	pthread_t threads[5];
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+	int i;
+	for(i = 0; i < 5; i++)
+	{
+	  /* Assign a random number between 10 and 50 (inclusive) */
+	  t_args.capacity = (rand() % 41) + 10;
+	  t_args.duration = (rand() % 5) + 1;
+	  t_args.order_size = order_size;
+	  t_args.cur_order_size = &cur_order_size;
+
+	  pthread_create(&threads[i], &attr, (void *)manufacture, (void *) t_args);
+	}
+	
 }
 
+void manufacture(void* args)
+{
+
+}
 
 void shut_down_factory_lines()
 {

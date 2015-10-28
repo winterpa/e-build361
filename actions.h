@@ -21,6 +21,13 @@ typedef enum
   NUM_EVENTS
 } event;
 
+typedef struct {
+  int capacity;
+  int duration;
+  int order_size;
+  int* cur_order_size;
+}thread_args;
+
 void
 get_payment_method();
 void
