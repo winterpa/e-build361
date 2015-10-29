@@ -22,6 +22,7 @@ typedef enum
 } event;
 
 typedef struct {
+  int thread_id;
   int capacity;
   int duration;
   int order_size;
@@ -32,6 +33,8 @@ void
 get_payment_method();
 void
 dispatch_factory_lines();
+void
+manufacture();
 void
 shut_down_factory_lines();
 void

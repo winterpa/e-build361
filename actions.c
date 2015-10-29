@@ -4,14 +4,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 #include <inttypes.h>
 #include <assert.h>
+#include <semaphore.h>
 #include <pthread.h>
 
 #include "actions.h"
 
 int cur_order_size;
-sema_t sema;
+sem_t sema;
 
 void get_payment_method()
 {
@@ -26,9 +28,9 @@ void dispatch_factory_lines()
 	
 	uint8_t rc = 0;
 	int order_size;
+	void* status = NULL;
 	thread_args t_args;
-	t_args = malloc(sizeof(thread_args));
-	sema_init(&sema, 0, 1);
+	sem_init(&sema, 0, 1);
 
 	/* Assign a random number between 1000 and 2000 (inclusive)*/
 	order_size = (rand() % 1001) + 1000;
@@ -39,42 +41,61 @@ void dispatch_factory_lines()
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
+	printf("Order size: %d\n", order_size);
 	int i;
 	for(i = 0; i < 5; i++)
 	{
+	  t_args.thread_id = i;
 	  /* Assign a random number between 10 and 50 (inclusive) */
 	  t_args.capacity = (rand() % 41) + 10;
 	  t_args.duration = (rand() % 5) + 1;
 	  t_args.order_size = order_size;
 	  t_args.cur_order_size = &cur_order_size;
+	  printf("Manufacturing Line[%d]: \n\tCapacity-%d \n\tDuration-%d\n", i,
+		      t_args.capacity, t_args.duration);
 
 	  rc = pthread_create(&threads[i], &attr, (void *)manufacture, (void *) (&t_args));
 	
 	  assert(rc == 0);
 
 	}
+	for(i = 0; i < 5; i++)
+        {
+	  rc = pthread_join (threads[i], &status);
+	  assert(rc == 0);
+	}
+
+	printf("Items Made: %d\n", cur_order_size);
 	
 }
 
 void manufacture(void* args)
 {
-	struct t_args=(thread_args)args;
-	sema_wait(&sema);
+	int count = 0;
+	int total_made = 0;
+	thread_args t_args;
+	memcpy(&t_args,args,sizeof(thread_args));
+	sem_wait(&sema);
 
 	while (*(t_args.cur_order_size) < t_args.order_size)
 	{
 		if (*(t_args.cur_order_size) + t_args.capacity > t_args.order_size)
 		{
-			*(t_args.cur_order_size) += (t_args.ordersize - *(t_args.cur_order_size));
+			*(t_args.cur_order_size) += (t_args.order_size - *(t_args.cur_order_size));
+			total_made+= (t_args.order_size -
+				      *(t_args.cur_order_size));
 		}
 		else
 		{
 			*(t_args.cur_order_size) += t_args.capacity;
+			total_made += t_args.capacity;
 		}
+		count++;
 		sleep(t_args.duration);
+		sem_post(&sema);
 	}
-	sema_post(&sema);
-	
+	printf("Line [%d]: \n\tItems Made: %d \n\tIterations: %d\n",
+		  t_args.thread_id, total_made, count);
 }
 
 void shut_down_factory_lines()
