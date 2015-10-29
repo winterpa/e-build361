@@ -4,11 +4,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <inttypes.h>
+#include <assert.h>
 #include <pthread.h>
 
 #include "actions.h"
 
 int cur_order_size;
+sema_t sema;
 
 void get_payment_method()
 {
@@ -21,9 +24,11 @@ void dispatch_factory_lines()
 	/* Seed the random number generator with the current time */
 	srand(time(NULL));
 	
+	uint8_t rc = 0;
 	int order_size;
 	thread_args t_args;
 	t_args = malloc(sizeof(thread_args));
+	sema_init(&sema, 0, 1);
 
 	/* Assign a random number between 1000 and 2000 (inclusive)*/
 	order_size = (rand() % 1001) + 1000;
@@ -43,14 +48,33 @@ void dispatch_factory_lines()
 	  t_args.order_size = order_size;
 	  t_args.cur_order_size = &cur_order_size;
 
-	  pthread_create(&threads[i], &attr, (void *)manufacture, (void *) t_args);
+	  rc = pthread_create(&threads[i], &attr, (void *)manufacture, (void *) (&t_args));
+	
+	  assert(rc == 0);
+
 	}
 	
 }
 
 void manufacture(void* args)
 {
+	struct t_args=(thread_args)args;
+	sema_wait(&sema);
 
+	while (*(t_args.cur_order_size) < t_args.order_size)
+	{
+		if (*(t_args.cur_order_size) + t_args.capacity > t_args.order_size)
+		{
+			*(t_args.cur_order_size) += (t_args.ordersize - *(t_args.cur_order_size));
+		}
+		else
+		{
+			*(t_args.cur_order_size) += t_args.capacity;
+		}
+		sleep(t_args.duration);
+	}
+	sema_post(&sema);
+	
 }
 
 void shut_down_factory_lines()
