@@ -1,6 +1,8 @@
 #ifndef accepting_c
 #define accepting_c
 
+#include <stdio.h>
+
 #include "accepting.h"
 #include "actions.h"
 #include "statemodel.h" //For the other states
@@ -22,6 +24,7 @@ state_t accepting = {
 state_t* order_received()
 {
 	attempts = 0;
+	printf("Order received.\n");
 	return &processing;
 }
 

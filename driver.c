@@ -15,6 +15,7 @@ int main()
 
   cur_state = " ";
   printf("Input character to change state.\n");
+  printf("State: Accepting\n");
   scanf("%s", &user_input[0]);
 
   while (strcmp(user_input,"X")!=0)

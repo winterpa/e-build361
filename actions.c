@@ -18,7 +18,7 @@ sem_t print;
 
 void get_payment_method()
 {
-        printf("Payment method received.\n");
+        printf("Please enter a payment method.\n");
 }
 
 void dispatch_factory_lines()
