@@ -23,84 +23,76 @@ void get_payment_method()
 
 void dispatch_factory_lines()
 {
+	int shmid ;
+   	key_t shmkey;
+   	int shmflg ;
+   	shared_data *p;
+
+	shmkey = SHMEM_KEY ;
+	shmflg = IPC_CREAT | S_IRUSR | S_IWUSR ;
+
+	shmid = shmget( shmkey , SHMEM_SIZE , shmflg ) ;
+
+	if ( shmid != -1 ) {
+	   printf("\nShared memory segment '0x%X' %s" , shmkey  ,
+		  "successfully created/found with id=%d\n" , shmid ) ;
+	}
+	else {
+	   printf("\nFailed to create/find shared memory '0x%X'.\n", shmkey );
+	   perror("Reason: ");
+	   exit(-1) ;    
+	}
+	p = (shared_data *) shmat( shmid , NULL , 0 );
+	if ( p == (shared_data *) -1 ) {
+	   printf ("\nFailed to attach shared memory id=%d\n" , shmid );
+	   exit(-1) ;
+	}
+
 	printf("Factory lines dispatched.\n");
-	/* Seed the random number generator with the current time */
-	srand(time(NULL));
-	
-	uint8_t rc = 0;
-	int order_size;
-	void* status = NULL;
-	thread_args t_args[5];
-	sem_init(&sema, 0, 1);
-	sem_init(&print, 0, 1);
 
-	/* Assign a random number between 1000 and 2000 (inclusive)*/
-	order_size = (rand() % 1001) + 1000;
-	cur_order_size = 0;
+	sema_init(&p->super_sema, 0, 1);
+	sema_init(&p->factory_sema, 0, 1);
 
-	pthread_t threads[5];
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-	printf("Order size: %d\n", order_size);
-	int i;
-	for(i = 0; i < 5; i++)
-	{
-	  t_args[i].thread_id = i;
-	  /* Assign a random number between 10 and 50 (inclusive) */
-	  t_args[i].capacity = (rand() % 41) + 10;
-	  t_args[i].duration = (rand() % 5) + 1;
-	  t_args[i].order_size = order_size;
-	  t_args[i].cur_order_size = &cur_order_size;
-	  printf("Manufacturing Line[%d]: \n\tCapacity-%d \n\tDuration-%d\n", i,
-		      t_args[i].capacity, t_args[i].duration);
-
-	  rc = pthread_create(&threads[i], &attr, (void *)manufacture, (void *) (&(t_args[i])));
-	
-	  assert(rc == 0);
-
-	}
-	for(i = 0; i < 5; i++)
-        {
-	  rc = pthread_join (threads[i], &status);
-	  assert(rc == 0);
-	}
-
-	printf("Items Made: %d\n", cur_order_size);
-	
-}
-
-void manufacture(void* args)
-{
-	int count = 0;
-	int total_made = 0;
-	thread_args t_args;
-	memcpy(&t_args,args,sizeof(thread_args));
-
-	while (*(t_args.cur_order_size) < t_args.order_size)
-	{
-		sleep(t_args.duration);
-		sem_wait(&sema);
-		if (*(t_args.cur_order_size) + t_args.capacity > t_args.order_size)
+	pid_t superID = fork();
+	if (superID == 0)
+		if(execlp("gnome-terminal", "SuperVterm", "-x", "bin/bash", "-c", "./supervisor 5", NULL) < 0)
 		{
-			*(t_args.cur_order_size) += (t_args.order_size - *(t_args.cur_order_size));
-			total_made+= (t_args.order_size -
-				      *(t_args.cur_order_size));
+			perror("execlp Supervisor Failed");
+			exit(-1);
 		}
-		else
+
+	pid_t factory_line_ID;
+
+	int ii;
+	factory_line_ID = fork();
+	if()
+	if(factory_line_ID == 0)
+	{
+		int count = 0;
+		int total_made = 0;
+		thread_args t_args;
+		memcpy(&t_args,args,sizeof(thread_args));
+
+		while (p->order_size > 0)
 		{
-			*(t_args.cur_order_size) += t_args.capacity;
-			total_made += t_args.capacity;
+			sem_wait(&sema);
+			p->order_size--;
+			sem_post(&sema);
+			sleep(t_args.duration);
+
 		}
-		count++;
-		sem_post(&sema);
 	}
 	sem_wait(&print);
 	printf("Line [%d]: \n\tItems Made: %d \n\tIterations: %d\n",
 		  t_args.thread_id, total_made, count);
 	fflush(NULL);
 	sem_post(&print);
+
+	printf("Order size: %d\n", order_size);
+	int i;
+
+	printf("Items Made: %d\n", cur_order_size);
+	
 }
 
 void shut_down_factory_lines()

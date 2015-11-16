@@ -6,9 +6,36 @@
 #include <sys/types.h>
 #include <sys/msg.h>
 #include "message.h"
+#include "shmem-ex.h"
 
 int main ( int argc , char * argv[] )
 {
+	/* Initialize the shared memory */
+	int shmid ;
+   	key_t shmkey;
+   	int shmflg ;
+   	shared_data *p;
+
+	shmkey = SHMEM_KEY ;
+	shmflg = IPC_CREAT | S_IRUSR | S_IWUSR ;
+
+	shmid = shmget( shmkey , SHMEM_SIZE , shmflg ) ;
+
+	if ( shmid != -1 ) {
+	   printf("\nShared memory segment '0x%X' %s" , shmkey  ,
+		  "successfully created/found with id=%d\n" , shmid ) ;
+	}
+	else {
+	   printf("\nFailed to create/find shared memory '0x%X'.\n", shmkey );
+	   perror("Reason: ");
+	   exit(-1) ;    
+	}
+	p = (shared_data *) shmat( shmid , NULL , 0 );
+	if ( p == (shared_data *) -1 ) {
+	   printf ("\nFailed to attach shared memory id=%d\n" , shmid );
+	   exit(-1) ;
+	}
+
 	int num_lines = atoi(argv[1]);
 
 	msgBuf msg ;
@@ -43,7 +70,8 @@ int main ( int argc , char * argv[] )
 	}
 
 	/* prepare the result to send back to the User process */	
-	
+	msg.info.type
+
 	msg.info.sender = getpid() ;
 
 	/* Send the result message to the User process */
