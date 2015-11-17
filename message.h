@@ -4,7 +4,7 @@
 typedef struct {
 	long mtype ; /* 1: production , 2: termination */
 	struct {
-		pid_t sender ; /* ID of sending process */
+		int sender ; /* ID of sending process */
 		int num_items ; /* Items made during iteration */
 		int iteration ; /* Current iteration */
 	} info ;

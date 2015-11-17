@@ -48,10 +48,21 @@ void dispatch_factory_lines()
 	   exit(-1) ;
 	}
 
+	msgBuf msg ;
+	key_t msgQueKey ;
+	int queID ;
+
+	/* Create / Find the message queues */
+	msgQueKey = BASE_MAILBOX_NAME ;
+	queID = msgget( msgQueKey , IPC_CREAT | 0600 ) ; /*rw. ... ...*/
+
 	printf("Factory lines dispatched.\n");
 
-	sema_init(&p->super_sema, 0, 1);
-	sema_init(&p->factory_sema, 0, 1);
+	sema_init(&p->super_sema, 1, 0);
+	sema_init(&p->factory_sema, 1, 1);
+	sema_init(&p->print_sema, 1, 0);
+
+	srandom(time(NULL));
 
 	pid_t superID = fork();
 	if (superID == 0)
@@ -60,38 +71,21 @@ void dispatch_factory_lines()
 			perror("execlp Supervisor Failed");
 			exit(-1);
 		}
-
-	pid_t factory_line_ID;
-
+		
 	int ii;
-	factory_line_ID = fork();
-	if()
-	if(factory_line_ID == 0)
+	int capacity;
+	int duration;
+	for(ii = 0; ii < 5; ii++)
 	{
-		int count = 0;
-		int total_made = 0;
-		thread_args t_args;
-		memcpy(&t_args,args,sizeof(thread_args));
-
-		while (p->order_size > 0)
+		if(fork() == 0)
 		{
-			sem_wait(&sema);
-			p->order_size--;
-			sem_post(&sema);
-			sleep(t_args.duration);
-
+			capacity = random() % 41 + 10;
+			duration = random() % 50 + 50;
+			execlp("gnome-terminal", "SuperVterm", "-x", "bin/bash", "-c",, "./factory_lines", ii, capacity, duration, 0);
 		}
 	}
-	sem_wait(&print);
-	printf("Line [%d]: \n\tItems Made: %d \n\tIterations: %d\n",
-		  t_args.thread_id, total_made, count);
-	fflush(NULL);
-	sem_post(&print);
 
-	printf("Order size: %d\n", order_size);
-	int i;
-
-	printf("Items Made: %d\n", cur_order_size);
+	sema_wait(&(p->super_sema));
 	
 }
 
