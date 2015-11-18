@@ -6,11 +6,17 @@
 #include <time.h>
 #include <string.h>
 #include <inttypes.h>
+#include <errno.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
 #include <assert.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include "actions.h"
+#include "shmem-ex.h"
+#include "message.h"
 
 int cur_order_size;
 sem_t sema;
@@ -33,7 +39,7 @@ void dispatch_factory_lines()
 
 	shmid = shmget( shmkey , SHMEM_SIZE , shmflg ) ;
 
-	if ( shmid != -1 ) {
+	/*if ( shmid != -1 ) {
 	   printf("\nShared memory segment '0x%X' %s" , shmkey  ,
 		  "successfully created/found with id=%d\n" , shmid ) ;
 	}
@@ -41,12 +47,12 @@ void dispatch_factory_lines()
 	   printf("\nFailed to create/find shared memory '0x%X'.\n", shmkey );
 	   perror("Reason: ");
 	   exit(-1) ;    
-	}
+	}*/
 	p = (shared_data *) shmat( shmid , NULL , 0 );
-	if ( p == (shared_data *) -1 ) {
+	/*if ( p == (shared_data *) -1 ) {
 	   printf ("\nFailed to attach shared memory id=%d\n" , shmid );
 	   exit(-1) ;
-	}
+	}*/
 
 	msgBuf msg ;
 	key_t msgQueKey ;
@@ -58,35 +64,51 @@ void dispatch_factory_lines()
 
 	printf("Factory lines dispatched.\n");
 
-	sema_init(&p->super_sema, 1, 0);
-	sema_init(&p->factory_sema, 1, 1);
-	sema_init(&p->print_sema, 1, 0);
+	sem_init(&p->super_sema, 1, 0);
+	sem_init(&p->factory_sema, 1, 0);
+	sem_init(&p->print_sema, 1, 0);
 
 	srandom(time(NULL));
 
+	p->order_size = random() % 1001 + 1000;
+
+	int ii;
+	int capacity;
+	int duration;
+	char* argv0 = "./factory_lines";
+	char argv1[5];
+	char argv2[5];
+	char argv3[5];
+	pid_t childID;
+
+	for(ii = 0; ii < 5; ii++)
+	{
+		capacity = random() % 41 + 10;
+		duration = random() % 5 + 1;
+		childID = fork();
+		if(childID == 0)
+		{
+			snprintf(argv1, 5, "%d", ii);
+			snprintf(argv2, 5, "%d", capacity);
+			snprintf(argv3, 5, "%d", duration);
+			printf("Dispatched line %d with capacity-%d and duration-%d\n", ii, capacity, duration);
+			execl("./factory_lines", argv0, argv1, argv2, argv3, (char * )NULL);
+		}
+	}
+
 	pid_t superID = fork();
 	if (superID == 0)
-		if(execlp("gnome-terminal", "SuperVterm", "-x", "bin/bash", "-c", "./supervisor 5", NULL) < 0)
+		if(execlp("gnome-terminal", "SuperVterm", "-x", "/bin/bash", "-c", "./supervisor 5", NULL) < 0)
 		{
 			perror("execlp Supervisor Failed");
 			exit(-1);
 		}
-		
-	int ii;
-	int capacity;
-	int duration;
-	for(ii = 0; ii < 5; ii++)
-	{
-		if(fork() == 0)
-		{
-			capacity = random() % 41 + 10;
-			duration = random() % 50 + 50;
-			execlp("gnome-terminal", "SuperVterm", "-x", "bin/bash", "-c",, "./factory_lines", ii, capacity, duration, 0);
-		}
-	}
 
-	sema_wait(&(p->super_sema));
-	
+	printf("Waiting for supervisor to signal\n");
+	sem_post(&(p->factory_sema));
+	sem_wait(&(p->super_sema));
+	printf("Signalling supervisor to print\n");
+	sem_post(&(p->print_sema));
 }
 
 void shut_down_factory_lines()

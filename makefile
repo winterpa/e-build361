@@ -2,7 +2,7 @@ driver: supervisor factory_lines driver.o statemodel.o actions.o state.o accepti
 	gcc driver.o statemodel.o actions.o state.o accepting.o shipping.o processing.o manufacturing.o -o driver -lpthread
 
 supervisor: supervisor.c message.h shmem-ex.h
-	gcc -c supervisor.c -o supervisor
+	gcc supervisor.c -o supervisor -lpthread
 
 factory_lines: factory_lines.c message.h shmem-ex.h
 	gcc factory_lines.c -o factory_lines -lpthread
@@ -10,7 +10,7 @@ factory_lines: factory_lines.c message.h shmem-ex.h
 driver.o: driver.c actions.h statemodel.h
 	gcc -c driver.c
 
-actions.o: actions.c actions.h
+actions.o: actions.c actions.h message.h shmem-ex.h
 	gcc -c actions.c -o actions.o -lpthread
 
 statemodel.o: actions.h statemodel.h statemodel.c 
@@ -32,4 +32,4 @@ manufacturing.o: state.h manufacturing.h manufacturing.c
 	gcc -c manufacturing.c
 
 clean:
-	rm *.o ; rm driver ; rm factory_lines
+	rm *.o ; rm driver ; rm factory_lines ; rm supervisor

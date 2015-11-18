@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <semaphore.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 #include "message.h"
 #include "shmem-ex.h"
@@ -22,8 +23,8 @@ main(int argc, char ** argv)
 	int factory_id = atoi(argv[1]);
 	int capacity = atoi(argv[2]);
 	int duration = atoi(argv[3]);
-	int items_made = 0;
 	int iterations = 0;
+	bool flag = true;
 
 	int shmid ;
    	key_t shmkey;
@@ -37,37 +38,37 @@ main(int argc, char ** argv)
 
 	p = (shared_data *) shmat( shmid , NULL , 0 );
 
+
 	msgBuf msg ;
 	key_t msgQueKey ;
 	int queID ;
-	int msgStatus ;
-	int result ;
 
 	/* Create / Find the message queues */
 	msgQueKey = BASE_MAILBOX_NAME ;
 	queID = msgget( msgQueKey , IPC_CREAT | 0600 ) ; /*rw. ... ...*/
 
-	while (1)
+	while (flag)
 	{
 		sleep(duration);
-		sem_wait(&p->factory_sema);
+		sem_wait(&(p->factory_sema));
+		//printf("Factory Line %d -- MAKING STUFF\n", factory_id);
 		if(p->order_size > 0)
 		{
 			p->order_size -= capacity;
+			//printf("order_size is now %d\n", p->order_size);
 			msg.mtype = 1;
 		}
 		else
 		{
 			msg.mtype = 2;
-			break;
+			flag = false;
 		}
-		items_made += capacity;
+		sem_post(&p->factory_sema);
 		iterations++;
 		msg.info.sender = factory_id;
-		msg.info.num_items = items_made;
+		msg.info.num_items = capacity;
 		msg.info.iteration = iterations;
-		sem_post(&p->factory_sema);
-		msgsnd( queID , &msg , MSG_INFO_SIZE , 0 );
+		msgsnd( queID , &msg , MSG_INFO_SIZE , 0);
 	}
 }
 
