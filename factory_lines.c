@@ -38,6 +38,9 @@ main(int argc, char ** argv)
 
 	p = (shared_data *) shmat( shmid , NULL , 0 );
 
+	struct timespec ts;
+	ts.tv_sec = 0;
+    ts.tv_nsec = duration * 1000000;
 
 	msgBuf msg ;
 	key_t msgQueKey ;
@@ -49,7 +52,7 @@ main(int argc, char ** argv)
 
 	while (flag)
 	{
-		sleep(duration);
+		nanosleep(&ts, NULL);
 		sem_wait(&(p->factory_sema));
 		//printf("Factory Line %d -- MAKING STUFF\n", factory_id);
 		if(p->order_size > 0)
@@ -70,6 +73,8 @@ main(int argc, char ** argv)
 		msg.info.iteration = iterations;
 		msgsnd( queID , &msg , MSG_INFO_SIZE , 0);
 	}
+
+	shmdt(p);
 }
 
 #endif

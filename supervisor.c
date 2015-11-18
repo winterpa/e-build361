@@ -73,27 +73,27 @@ int main ( int argc , char * argv[] )
 	int LinesActive = totalLines;
 	while (LinesActive > 0)
 	{
-		msgStatus = msgrcv( queID , &msg , MSG_INFO_SIZE , 1 , 0 );
+		msgStatus = msgrcv( queID , &msg , MSG_INFO_SIZE , 0 , 0 );
 		
-		printf("mtype = %lu", msg.mtype);
 		if ( msg.mtype == 1 )
 		{
 			//update production aggregates (num-items-built, num-iterations)
 			aggregs[msg.info.sender].num_items += msg.info.num_items;
 			aggregs[msg.info.sender].iteration++;
-			printf("Factory Line %d -- MADE %d items [%d]\n", msg.info.sender, aggregs[msg.info.sender].num_items, aggregs[msg.info.sender].iteration);
 		}
-		else 
+		else if ( msg.mtype == 2 )
 		{
 			LinesActive--;
-			printf("Recieved termination message -- %d lines left\n", LinesActive);
+		}
+		else
+		{
+			//do nothing
 		}
 	}
 
 	sem_post(&p->super_sema);
 
 	sem_wait(&p->print_sema);
-	printf("Supervisor: DONE!\n");
 
 	//Print production aggregates
 	for(i = 0; i < totalLines; i++)
@@ -101,6 +101,9 @@ int main ( int argc , char * argv[] )
 		printf("Number of Items: %d\n", aggregs[i].num_items);
 		printf("Number of iterations: %d\n", aggregs[i].iteration);
 	}	
+
+	sem_post(&p->super_sema);
+	shmdt(p);
 
 	return 0 ;
 }

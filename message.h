@@ -10,7 +10,7 @@ typedef struct {
 	} info ;
 } msgBuf ;
 
-#define MSG_INFO_SIZE ( sizeof(msgBuf) - sizeof(long) )
+#define MSG_INFO_SIZE ( sizeof(msgBuf))
 
 #define BASE_MAILBOX_NAME 0x20
 

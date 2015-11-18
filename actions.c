@@ -75,12 +75,19 @@ void dispatch_factory_lines()
 	int ii;
 	int capacity;
 	int duration;
-	char* argv0 = "./factory_lines";
+	char* argv0 = "factory_lines";
 	char argv1[5];
 	char argv2[5];
 	char argv3[5];
 	pid_t childID;
 
+pid_t superID = fork();
+if (superID == 0)
+		if(execlp("gnome-terminal", "SuperVterm", "-x", "/bin/bash", "-c", "./supervisor 5", NULL) < 0)
+		{
+			perror("execlp Supervisor Failed");
+			exit(-1);
+		}
 	for(ii = 0; ii < 5; ii++)
 	{
 		capacity = random() % 41 + 10;
@@ -96,24 +103,59 @@ void dispatch_factory_lines()
 		}
 	}
 
-	pid_t superID = fork();
-	if (superID == 0)
-		if(execlp("gnome-terminal", "SuperVterm", "-x", "/bin/bash", "-c", "./supervisor 5", NULL) < 0)
-		{
-			perror("execlp Supervisor Failed");
-			exit(-1);
-		}
+	
+	
 
 	printf("Waiting for supervisor to signal\n");
 	sem_post(&(p->factory_sema));
 	sem_wait(&(p->super_sema));
-	printf("Signalling supervisor to print\n");
-	sem_post(&(p->print_sema));
+	
+
+
 }
 
 void shut_down_factory_lines()
 {
-        printf("Factory lines shut down.\n");
+	int shmid ;
+   	key_t shmkey;
+   	int shmflg ;
+   	shared_data *p;
+
+	shmkey = SHMEM_KEY ;
+	shmflg = IPC_CREAT | S_IRUSR | S_IWUSR ;
+
+	shmid = shmget( shmkey , SHMEM_SIZE , shmflg ) ;
+
+	/*if ( shmid != -1 ) {
+	   printf("\nShared memory segment '0x%X' %s" , shmkey  ,
+		  "successfully created/found with id=%d\n" , shmid ) ;
+	}
+	else {
+	   printf("\nFailed to create/find shared memory '0x%X'.\n", shmkey );
+	   perror("Reason: ");
+	   exit(-1) ;    
+	}*/
+	p = (shared_data *) shmat( shmid , NULL , 0 );
+	/*if ( p == (shared_data *) -1 ) {
+	   printf ("\nFailed to attach shared memory id=%d\n" , shmid );
+	   exit(-1) ;
+	}*/
+
+	msgBuf msg ;
+	key_t msgQueKey ;
+	int queID ;
+
+	/* Create / Find the message queues */
+	msgQueKey = BASE_MAILBOX_NAME ;
+	queID = msgget( msgQueKey , IPC_CREAT | 0600 ) ; /*rw. ... ...*/
+
+	sem_post(&(p->print_sema));
+
+	sem_wait(&(p->super_sema));
+
+	shmdt(p);
+	shmctl( shmid , IPC_RMID , NULL );
+	msgctl( queID, IPC_RMID, NULL);
 }
 
 void get_address()
