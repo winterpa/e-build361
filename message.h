@@ -2,15 +2,15 @@
 #define MAXNAMELEN 20
 
 typedef struct {
-	long mtype ; /* 1: production , 2: termination */
+	uint32_t mtype ; /* 1: request, 2: permission , 3: production */
 	struct {
-		int sender ; /* ID of sending process */
-		int num_items ; /* Items made during iteration */
-		int iteration ; /* Current iteration */
+		uint32_t id ; /* ID of sending process */
+		uint32_t num_items ; /* Items made during iteration */
+		uint32_t iteration ; /* Current iteration */
 	} info ;
 } msgBuf ;
 
-#define MSG_INFO_SIZE ( sizeof(msgBuf))
+#define MSG_SIZE (sizeof(msgBuf))
 
 #define BASE_MAILBOX_NAME 0x20
 

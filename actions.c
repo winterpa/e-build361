@@ -1,26 +1,34 @@
 #ifndef actions_c
 #define actions_c
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-#include <string.h>
-#include <inttypes.h>
+#include <arpa/inet.h>
+#include <assert.h>
 #include <errno.h>
+#include <inttypes.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/socket.h>
 #include <sys/shm.h>
 #include <sys/stat.h>
-#include <assert.h>
-#include <semaphore.h>
-#include <pthread.h>
+#include <sys/types.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "actions.h"
 #include "shmem-ex.h"
 #include "message.h"
 
-int cur_order_size;
-sem_t sema;
-sem_t print;
+#define MYPORT "5445"
+
+struct pro_aggreg{
+	int num_items; /* Items made during iteration */
+	int iteration; /* Current iteration */
+};
 
 void get_payment_method()
 {
@@ -29,133 +37,114 @@ void get_payment_method()
 
 void dispatch_factory_lines()
 {
-	int shmid ;
-   	key_t shmkey;
-   	int shmflg ;
-   	shared_data *p;
+    char s[INET6_ADDRSTRLEN];
+    int i;
+    int rv;
+	int linesActive;
+    int numbytes;
+	int sockfd;
+    msgBuf message;
+    socklen_t addr_len;
+    struct addrinfo hints, *servinfo, *p;
+    struct sockaddr_storage their_addr;
+    uint32_t clientID;
+    uint32_t order_size;
 
-	shmkey = SHMEM_KEY ;
-	shmflg = IPC_CREAT | S_IRUSR | S_IWUSR ;
+    struct pro_aggreg aggregs[5];
 
-	shmid = shmget( shmkey , SHMEM_SIZE , shmflg ) ;
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
+    hints.ai_socktype = SOCK_DGRAM;
+    hints.ai_flags = AI_PASSIVE; // use my IP
 
-	/*if ( shmid != -1 ) {
-	   printf("\nShared memory segment '0x%X' %s" , shmkey  ,
-		  "successfully created/found with id=%d\n" , shmid ) ;
-	}
-	else {
-	   printf("\nFailed to create/find shared memory '0x%X'.\n", shmkey );
-	   perror("Reason: ");
-	   exit(-1) ;    
-	}*/
-	p = (shared_data *) shmat( shmid , NULL , 0 );
-	/*if ( p == (shared_data *) -1 ) {
-	   printf ("\nFailed to attach shared memory id=%d\n" , shmid );
-	   exit(-1) ;
-	}*/
+    if ((rv = getaddrinfo(NULL, MYPORT, &hints, &servinfo)) != 0) 
+    {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+    }
 
-	msgBuf msg ;
-	key_t msgQueKey ;
-	int queID ;
+    for(p = servinfo; p != NULL; p = p->ai_next) 
+    {
+        printf("in loop \n");
+        if ((sockfd = socket(p->ai_family, p->ai_socktype,
+                p->ai_protocol)) == -1) 
+        {
+            perror("UDPserver: socket");
+            continue;
+        }
 
-	/* Create / Find the message queues */
-	msgQueKey = BASE_MAILBOX_NAME ;
-	queID = msgget( msgQueKey , IPC_CREAT | 0600 ) ; /*rw. ... ...*/
+        if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) 
+        {
+            close(sockfd);
+            perror("UDPserver: bind");
+            continue;
+        }
 
-	printf("Factory lines dispatched.\n");
+        break;
+    }
 
-	sem_init(&p->super_sema, 1, 0);
-	sem_init(&p->factory_sema, 1, 0);
-	sem_init(&p->print_sema, 1, 0);
+    if (p == NULL) 
+    {
+        fprintf(stderr, "UDPserver: failed to bind socket\n");
+    }
 
-	srandom(time(NULL));
-
-	p->order_size = random() % 1001 + 1000;
-
-	int ii;
-	int capacity;
-	int duration;
-	char* argv0 = "factory_lines";
-	char argv1[5];
-	char argv2[5];
-	char argv3[5];
-	pid_t childID;
-
-pid_t superID = fork();
-if (superID == 0)
-		if(execlp("gnome-terminal", "SuperVterm", "-x", "/bin/bash", "-c", "./supervisor 5", NULL) < 0)
-		{
-			perror("execlp Supervisor Failed");
-			exit(-1);
-		}
-	for(ii = 0; ii < 5; ii++)
+    /* Set default values */
+	for(i = 0; i < 5; i++)
 	{
-		capacity = random() % 41 + 10;
-		duration = random() % 5 + 1;
-		childID = fork();
-		if(childID == 0)
-		{
-			snprintf(argv1, 5, "%d", ii);
-			snprintf(argv2, 5, "%d", capacity);
-			snprintf(argv3, 5, "%d", duration);
-			printf("Dispatched line %d with capacity-%d and duration-%d\n", ii, capacity, duration);
-			execl("./factory_lines", argv0, argv1, argv2, argv3, (char * )NULL);
-		}
+		aggregs[i].num_items = 0;
+		aggregs[i].iteration = 0;
 	}
 
-	
-	
+    srandom(time(NULL));
 
-	printf("Waiting for supervisor to signal\n");
-	sem_post(&(p->factory_sema));
-	sem_wait(&(p->super_sema));
-	
+	order_size = random() % 40001 + 10000;
 
+	addr_len = sizeof their_addr;
 
+	clientID = 1;
+	linesActive = 5;
+
+	while (linesActive > 0)
+	{
+		recvfrom(sockfd, &message, MSG_SIZE , 0, (struct sockaddr *)&their_addr, &addr_len);
+
+		if (message.mtype == 01)
+		{
+			message.mtype = 11;
+			message.info.id = clientID;
+			message.info.num_items = random() % 41 + 10; /* capacity for that client */
+			message.info.iteration = random() % 5 + 1; /* duration for that client */
+			clientID++;
+		}
+		if (message.mtype == 02)
+		{
+			if(order_size == 0)
+			{
+				message.mtype = 13; /* Stop the client from running anymore */
+				linesActive--;
+			}
+			else 
+			{
+				message.mtype = 12; /* Let the client run */
+				if(message.info.num_items > order_size) /* If it shouldn't make it's capacity */
+				{
+					message.info.num_items = order_size;
+				}
+				order_size -= message.info.num_items;
+			}
+		}
+		if (message.mtype == 03)
+		{
+			aggregs[message.info.id].num_items += message.info.num_items;
+			aggregs[message.info.id].iteration = message.info.iteration;
+		}
+		/* Send the message */
+		sendto(sockfd, (const void *)&message, MSG_SIZE, 0, (const struct sockaddr*)&their_addr, addr_len); 
+    }
 }
 
 void shut_down_factory_lines()
 {
-	int shmid ;
-   	key_t shmkey;
-   	int shmflg ;
-   	shared_data *p;
 
-	shmkey = SHMEM_KEY ;
-	shmflg = IPC_CREAT | S_IRUSR | S_IWUSR ;
-
-	shmid = shmget( shmkey , SHMEM_SIZE , shmflg ) ;
-
-	/*if ( shmid != -1 ) {
-	   printf("\nShared memory segment '0x%X' %s" , shmkey  ,
-		  "successfully created/found with id=%d\n" , shmid ) ;
-	}
-	else {
-	   printf("\nFailed to create/find shared memory '0x%X'.\n", shmkey );
-	   perror("Reason: ");
-	   exit(-1) ;    
-	}*/
-	p = (shared_data *) shmat( shmid , NULL , 0 );
-	/*if ( p == (shared_data *) -1 ) {
-	   printf ("\nFailed to attach shared memory id=%d\n" , shmid );
-	   exit(-1) ;
-	}*/
-
-	msgBuf msg ;
-	key_t msgQueKey ;
-	int queID ;
-
-	/* Create / Find the message queues */
-	msgQueKey = BASE_MAILBOX_NAME ;
-	queID = msgget( msgQueKey , IPC_CREAT | 0600 ) ; /*rw. ... ...*/
-
-	sem_post(&(p->print_sema));
-
-	sem_wait(&(p->super_sema));
-
-	shmdt(p);
-	shmctl( shmid , IPC_RMID , NULL );
-	msgctl( queID, IPC_RMID, NULL);
 }
 
 void get_address()
