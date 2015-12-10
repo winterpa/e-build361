@@ -34,27 +34,25 @@
 
 int main(int argc, char *argv[])
 {
-    int sockfd;
-    struct addrinfo addr, *servinfo, *p;
-    int rv;
-    int numbytes;
+  msgBuf message;
+  int rv;
+  int sockfd;
+  struct addrinfo addr, *servinfo, *p;
+
 	int iterations = 0;
 	uint32_t items_made = 0;
-	msgBuf message;
-    socklen_t addr_len;
-    struct sockaddr_storage their_addr;
+  bool flag = true;
 
+  memset(&addr, 0, sizeof addr);
+  addr.ai_family = AF_UNSPEC;
+  addr.ai_socktype = SOCK_DGRAM;
 
-    memset(&addr, 0, sizeof addr);
-    addr.ai_family = AF_UNSPEC;
-    addr.ai_socktype = SOCK_DGRAM;
-    
-	bool flag = true;
-
-    if ((rv = getaddrinfo(argv[1], SERVERPORT, &addr, &servinfo)) != 0) {
+  //Get server info
+  if ((rv = getaddrinfo(argv[1], SERVERPORT, &addr, &servinfo)) != 0)
+  {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
         return 1;
-    }
+  }
 
     // loop through all the results and make a socket
     for(p = servinfo; p != NULL; p = p->ai_next) {
@@ -72,31 +70,36 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    message.mtype = 01;
+  //Set and send message to server telling it that it is ready
+  message.mtype = 01;
 	message.info.isConnected = 0;
 
 	sendto(sockfd, (const void *) &message, MSG_SIZE, 0, p->ai_addr, p->ai_addrlen);
 
-    recvfrom(sockfd, (void *) &message, MSG_SIZE, 0, (struct sockaddr *)p->ai_addr, &p->ai_addrlen);
+  //Receive message to start making items
+  recvfrom(sockfd, (void *) &message, MSG_SIZE, 0, (struct sockaddr *)p->ai_addr, &p->ai_addrlen);
 
+  //Sets the information received from the server to local variables
 	uint32_t factory_id = message.info.id;
 	uint32_t capacity = message.info.num_items;
 	uint32_t duration = message.info.iteration;
 	uint32_t isConnected = message.info.isConnected;
 		
-    struct timespec ts;
+  struct timespec ts;
 	ts.tv_sec = duration / 1000;
-    ts.tv_nsec = (duration % 1000) * 1000;
+  ts.tv_nsec = (duration % 1000) * 1000;
 
+  //Continues to loop and make items until the message to finish is received
 	while (flag)
 	{
 		message.info.isConnected = isConnected;
 		message.mtype = 02;
-    	sendto(sockfd, (const void *) &message, MSG_SIZE, 0, p->ai_addr, p->ai_addrlen);
+    sendto(sockfd, (const void *) &message, MSG_SIZE, 0, p->ai_addr, p->ai_addrlen);
 		recvfrom(sockfd, (void *) &message, MSG_SIZE, 0, (struct sockaddr *)p->ai_addr, &p->ai_addrlen);
 
 		message = (msgBuf)message;
 
+    //Makes capacity or amount left to make and adds it to the current items made for that client
 		if (message.mtype == 12)
 		{
 			if(message.info.num_items != capacity)
@@ -105,24 +108,27 @@ int main(int argc, char *argv[])
 				items_made += capacity;
 			iterations++;
 
+      //Sends message to server that all items have been made
 			message.mtype = 03;
 			message.info.iteration = iterations;
 			sendto(sockfd, (const void *) &message, MSG_SIZE, 0, p->ai_addr, p->ai_addrlen);
 			nanosleep(&ts, NULL);
 		}
+		
+		//Breaks while loop and prints data for current client
 		if (message.mtype == 13)
 		{
 			printf("Number of iterations: %d\nItems produced: %d\nTotal duration: %d\n",
-				iterations, items_made, (iterations * duration));
+		  iterations, items_made, (iterations * duration));
 			
 			flag = false;
 		}
 	}
 
 	printf("Line %d has completed its portion of the order.\n", factory_id);
-    freeaddrinfo(servinfo);
+  freeaddrinfo(servinfo);
 
-    return 0;
+  return 0;
 }
 
 #endif
