@@ -38,26 +38,26 @@ void get_payment_method()
 void dispatch_factory_lines()
 {
     char s[INET6_ADDRSTRLEN];
-    int i;
-    int rv;
-	int linesActive;
-	int linesWaiting;
-    int numbytes;
-	int sockfd;
-    msgBuf message;
+    int i; /* for loop control */
+    int rv; 
+	int linesActive; /* The amount of lines currently active */
+	int linesWorking; /* The amount of lines currently working */
+	int sockfd; /* The socket number */
+    msgBuf message; /* The data structure to contain the data */
     socklen_t addr_len;
     struct addrinfo hints, *servinfo, *p;
     struct sockaddr_storage their_addr;
-    uint32_t clientID;
-    uint32_t order_size;
+    uint32_t clientID; /* The ID of the client */
+    uint32_t order_size; /* The amount of items going to be made */
 
-    struct pro_aggreg aggregs[5];
+    struct pro_aggreg aggregs[5]; /* The array to hold the aggregate data */
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_UNSPEC; // set to AF_INET to force IPv4
     hints.ai_socktype = SOCK_DGRAM;
     hints.ai_flags = AI_PASSIVE; // use my IP
 
+    /* Get the client info and bind the socket*/
     if ((rv = getaddrinfo(NULL, MYPORT, &hints, &servinfo)) != 0) 
     {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
@@ -86,53 +86,63 @@ void dispatch_factory_lines()
         fprintf(stderr, "Server: failed to bind socket\n");
     }
 
-    /* Set default values */
+    /* Set default values for the aggregate data*/
 	for(i = 0; i < 5; i++)
 	{
 		aggregs[i].num_items = 0;
 		aggregs[i].iteration = 0;
 	}
 
+	/* Seed the random number generator */
     srandom(time(NULL));
 
+    /* Create the order size */
 	order_size = random() % 10001 + 10000;
 
 	addr_len = sizeof their_addr;
 
+	/* Initialize looping variables and client IDs */
 	clientID = 1;
 	linesActive = 0;
-	linesWaiting = 0;
+	linesWorking = 0;
 	
+	/* Loop to set up client connections and hold until all 5 are set up */
 	while (linesActive < 5)
 	{
-		//printf("[Server]: Waiting for %d clients to connect...\n", 5 - linesActive);
+		/* Recieve a message from the client asking for it's information */
 		recvfrom(sockfd, &message, MSG_SIZE , 0, (struct sockaddr *)&their_addr, &addr_len);
-		message = (msgBuf)message;
-		//printf("[Server]: Received message type (%d).\n", message.mtype);
 
+		/* Cast the message */
+		message = (msgBuf)message;
+
+		/* If this is a client message asking for info and it hasn't been set up before... */
 		if (message.mtype == 01 && message.info.isConnected == 0)
 		{
-			message.mtype = 11;
-			message.info.id = clientID;
+			message.mtype = 11; /* Set the message type */
+			message.info.id = clientID; /* Give the client it's ID */
 			message.info.num_items = random() % 501 + 10; /* capacity for that client */
 			message.info.iteration = random() % 1001 + 1000; /* duration for that client */
 			message.info.isConnected = 1; /* Don't register this client again */
-			clientID++;
+			clientID++; /* Set it up for the next client */
 			printf("[Server]: Sending client (%d) capacity of %d and duration of %dms.\n", 
 				message.info.id, message.info.num_items, message.info.iteration);
-			linesActive++;
+			linesActive++; /* Increment the amount of lines active and ready to work */
 		}
 		else
-			message.mtype == 14;
+			message.mtype == 14; /* Dummy message (used for busy waiting) */
+
+		/* Send a message to the client */
 		sendto(sockfd, (const void *)&message, MSG_SIZE, 0, (const struct sockaddr*)&their_addr, addr_len); 
 	}
 
-	while (linesActive > 0 || linesWaiting > 0)
+	/* While there are active clients or clients making items */
+	while (linesActive > 0 || linesWorking > 0)
 	{
+		/* Receive a message from the client */
 		recvfrom(sockfd, &message, MSG_SIZE , 0, (struct sockaddr *)&their_addr, &addr_len);
 
+		/* Cast the message */
 		message = (msgBuf)message;
-
 
 		if (message.mtype == 02) /* Client wants to make stuff */
 		{
@@ -146,23 +156,26 @@ void dispatch_factory_lines()
 				message.mtype = 12; /* Let the client run */
 				if(message.info.num_items > order_size) /* If it shouldn't make it's capacity */
 				{
-					message.info.num_items = order_size;
+					message.info.num_items = order_size; /* Only make this much */
 				}
-				order_size -= message.info.num_items;
-				linesWaiting++;
+				order_size -= message.info.num_items; /* Decrement the amount of items being made */
+				linesWorking++; /* Let the loop know someone is making stuff */
 			}
 		}
 		if (message.mtype == 03) /* Line finished making stuff */
 		{
-			aggregs[message.info.id-1].num_items += message.info.num_items;
+			/* Update the aggregate data */
+			aggregs[message.info.id-1].num_items += message.info.num_items; 
 			aggregs[message.info.id-1].iteration = message.info.iteration;
-			linesWaiting--;
+
+			linesWorking--; /* Decrement the counting variable */
 		}
 
 		/* Send the message */
 		sendto(sockfd, (const void *)&message, MSG_SIZE, 0, (const struct sockaddr*)&their_addr, addr_len); 
     }
 
+    /* Print the aggregate data */
     for(i = 0; i < 5; i++)
 	{
 		printf("[%d] - Number of Items: %d\n", i + 1, aggregs[i].num_items);
