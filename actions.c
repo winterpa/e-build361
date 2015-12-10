@@ -127,7 +127,7 @@ void dispatch_factory_lines()
 		sendto(sockfd, (const void *)&message, MSG_SIZE, 0, (const struct sockaddr*)&their_addr, addr_len); 
 	}
 
-	while (linesActive > 0)
+	while (linesActive > 0 || linesWaiting > 0)
 	{
 		recvfrom(sockfd, &message, MSG_SIZE , 0, (struct sockaddr *)&their_addr, &addr_len);
 
@@ -149,12 +149,14 @@ void dispatch_factory_lines()
 					message.info.num_items = order_size;
 				}
 				order_size -= message.info.num_items;
+				linesWaiting++;
 			}
 		}
 		if (message.mtype == 03) /* Line finished making stuff */
 		{
 			aggregs[message.info.id-1].num_items += message.info.num_items;
 			aggregs[message.info.id-1].iteration = message.info.iteration;
+			linesWaiting--;
 		}
 
 		/* Send the message */
