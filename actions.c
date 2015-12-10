@@ -23,7 +23,7 @@
 #include "shmem-ex.h"
 #include "message.h"
 
-#define MYPORT "5445"
+#define MYPORT "5785"
 
 struct pro_aggreg{
 	int num_items; /* Items made during iteration */
@@ -65,7 +65,6 @@ void dispatch_factory_lines()
 
     for(p = servinfo; p != NULL; p = p->ai_next) 
     {
-        printf("in loop \n");
         if ((sockfd = socket(p->ai_family, p->ai_socktype,
                 p->ai_protocol)) == -1) 
         {
@@ -96,30 +95,45 @@ void dispatch_factory_lines()
 
     srandom(time(NULL));
 
-	order_size = random() % 40001 + 10000;
+	order_size = random() % 10001 + 10000;
 
 	addr_len = sizeof their_addr;
 
 	clientID = 1;
-	linesActive = 5;
+	linesActive = 0;
 	linesWaiting = 0;
-
-	while (linesActive > 0 || linesWaiting > 0)
+	
+	while (linesActive < 5)
 	{
-		printf("[Server]: Waiting for message...\n");
+		//printf("[Server]: Waiting for %d clients to connect...\n", 5 - linesActive);
 		recvfrom(sockfd, &message, MSG_SIZE , 0, (struct sockaddr *)&their_addr, &addr_len);
-		printf("[Server]: Received message type (%d).\n", message.mtype);
+		message = (msgBuf)message;
+		//printf("[Server]: Received message type (%d).\n", message.mtype);
 
-		if (message.mtype == 01)
+		if (message.mtype == 01 && message.info.isConnected == 0)
 		{
 			message.mtype = 11;
 			message.info.id = clientID;
-			message.info.num_items = random() % 41 + 10; /* capacity for that client */
-			message.info.iteration = random() % 4001 + 1000; /* duration for that client */
+			message.info.num_items = random() % 501 + 10; /* capacity for that client */
+			message.info.iteration = random() % 1001 + 1000; /* duration for that client */
+			message.info.isConnected = 1; /* Don't register this client again */
 			clientID++;
 			printf("[Server]: Sending client (%d) capacity of %d and duration of %dms.\n", 
 				message.info.id, message.info.num_items, message.info.iteration);
+			linesActive++;
 		}
+		else
+			message.mtype == 14;
+		sendto(sockfd, (const void *)&message, MSG_SIZE, 0, (const struct sockaddr*)&their_addr, addr_len); 
+	}
+
+	while (linesActive > 0)
+	{
+		recvfrom(sockfd, &message, MSG_SIZE , 0, (struct sockaddr *)&their_addr, &addr_len);
+
+		message = (msgBuf)message;
+
+
 		if (message.mtype == 02) /* Client wants to make stuff */
 		{
 			if(order_size == 0) /* Can't make any more stuff */
@@ -134,15 +148,13 @@ void dispatch_factory_lines()
 				{
 					message.info.num_items = order_size;
 				}
-					order_size -= message.info.num_items;
-					linesWaiting++; 
+				order_size -= message.info.num_items;
 			}
 		}
 		if (message.mtype == 03) /* Line finished making stuff */
 		{
-			aggregs[message.info.id].num_items += message.info.num_items;
-			aggregs[message.info.id].iteration = message.info.iteration;
-			linesWaiting--;
+			aggregs[message.info.id-1].num_items += message.info.num_items;
+			aggregs[message.info.id-1].iteration = message.info.iteration;
 		}
 
 		/* Send the message */
@@ -151,8 +163,8 @@ void dispatch_factory_lines()
 
     for(i = 0; i < 5; i++)
 	{
-		printf("Number of Items: %d\n", aggregs[i].num_items);
-		printf("Number of iterations: %d\n", aggregs[i].iteration);
+		printf("[%d] - Number of Items: %d\n", i + 1, aggregs[i].num_items);
+		printf("[%d] - Number of Iterations: %d\n", i + 1, aggregs[i].iteration);
 	}
 }
 
