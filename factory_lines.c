@@ -17,64 +17,124 @@
 #include "message.h"
 #include "shmem-ex.h"
 
-int
-main(int argc, char ** argv)
-{	
-	int factory_id = atoi(argv[1]);
-	int capacity = atoi(argv[2]);
-	int duration = atoi(argv[3]);
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+
+#include <sys/uio.h>
+
+#define SERVERPORT "4950"    // the port users will be connecting to
+
+int main(int argc, char *argv[])
+{
+    int sockfd;
+    struct addrinfo addr, *servinfo, *p;
+    int rv;
+    int numbytes;
 	int iterations = 0;
-	bool flag = true;
+	msgBuf message;
+    socklen_t addr_len;
+    struct sockaddr_storage their_addr;
 
-	int shmid ;
-   	key_t shmkey;
-   	int shmflg ;
-   	shared_data *p;
-
-	shmkey = SHMEM_KEY ;
-	shmflg = IPC_CREAT | S_IRUSR | S_IWUSR ;
-
-	shmid = shmget( shmkey , SHMEM_SIZE , shmflg ) ;
-
-	p = (shared_data *) shmat( shmid , NULL , 0 );
-
-	struct timespec ts;
+    
+    struct timespec ts;
 	ts.tv_sec = 0;
     ts.tv_nsec = duration * 1000000;
 
-	msgBuf msg ;
-	key_t msgQueKey ;
-	int queID ;
+    memset(&addr, 0, sizeof addr);
+    addr.ai_family = AF_UNSPEC;
+    addr.ai_socktype = SOCK_DGRAM;
+    
+	bool flag = true;
+	
+	message.mtype = 01
+	
+	
+    
+    //start new here
+    /*sockfd = socket(p->ai_family, p->ai_socktype,p->ai_protocol);
+    bind(fd,p->ai_addr,p->ai_addrlen);*/
 
-	/* Create / Find the message queues */
-	msgQueKey = BASE_MAILBOX_NAME ;
-	queID = msgget( msgQueKey , IPC_CREAT | 0600 ) ; /*rw. ... ...*/
+    if ((rv = getaddrinfo(argv[1], SERVERPORT, &addr, &servinfo)) != 0) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(rv));
+        return 1;
+    }
 
+    // loop through all the results and make a socket
+    if ((sockfd = socket(p->ai_family, p->ai_socktype,
+        p->ai_protocol)) == -1)
+    {
+        perror("UDPclient: socket");
+        continue;
+    }
+
+
+    if (p == NULL) {
+        fprintf(stderr, "UDPclient: failed to create socket\n");
+        return 2;
+    }
+
+    if (bind(fd,p->ai_addr,p->ai_addrlen)==-1)
+	{
+        close(sockfd);
+        perror("UDPserver: bind");
+        continue;
+    }
+	
+	sendto(sockfd, argv[2], strlen(argv[2]), 0, p->ai_addr, p->ai_addrlen)) == -1);
+	
+    recvfrom(sockfd, &message, MSG_SIZE, 0, p->ai_addr/*THIS NEEDS TO BE STRUCT SOCKADDR* FROM*/, p->ai_addrlen)) == -1);
+	
+	if (message.mtype == 11)
+	{
+		int factory_id = message.info.id;
+		int capacity = message.info.num_items;
+		int duration = message.info.iteration;
+		int order_size; 
+		
+		message.mtype = 01;
+	}
 	while (flag)
 	{
-		nanosleep(&ts, NULL);
-		sem_wait(&(p->factory_sema));
-		//printf("Factory Line %d -- MAKING STUFF\n", factory_id);
-		if(p->order_size > 0)
+		recvfrom(sockfd, &message, MSG_SIZE, 0, p->ai_addr/*THIS NEEDS TO BE STRUCT SOCKADDR* FROM*/, p->ai_addrlen)) == -1);
+	
+		if (message.mtype == 12)
 		{
-			p->order_size -= capacity;
-			//printf("order_size is now %d\n", p->order_size);
-			msg.mtype = 1;
+			nanosleep(&ts, NULL);
+			//printf("Factory Line %d -- MAKING STUFF\n", factory_id);
+			if(p->order_size > 0)
+			{
+				p->order_size -= capacity;
+				//printf("order_size is now %d\n", p->order_size);
+				
+			}
+			msg.mtype = 02;
+			//sendto(sockfd, argv[2], strlen(argv[2]), 0, p->ai_addr, p->ai_addrlen)) == -1);
 		}
-		else
+		else if (message.mtype == 13)
 		{
-			msg.mtype = 2;
+			printf("Number of iterations: %d\n Items produced: %d\n, Total duration: %d\n",
+				iterations, capacity /*this isnt correct*/, (iterations * duration));
+			
+			msg.mtype = 03;
 			flag = false;
 		}
-		sem_post(&p->factory_sema);
 		iterations++;
-		msg.info.sender = factory_id;
-		msg.info.num_items = capacity;
-		msg.info.iteration = iterations;
 		msgsnd( queID , &msg , MSG_INFO_SIZE , 0);
 	}
 
-	shmdt(p);
+    sendto(sockfd, argv[2], strlen(argv[2]), 0, p->ai_addr, p->ai_addrlen)) == -1);
+   
+    freeaddrinfo(servinfo);
+
+    return 0;
 }
 
 #endif
