@@ -41,6 +41,7 @@ void dispatch_factory_lines()
     int i;
     int rv;
 	int linesActive;
+	int linesWaiting;
     int numbytes;
 	int sockfd;
     msgBuf message;
@@ -68,23 +69,22 @@ void dispatch_factory_lines()
         if ((sockfd = socket(p->ai_family, p->ai_socktype,
                 p->ai_protocol)) == -1) 
         {
-            perror("UDPserver: socket");
+            perror("Server: socket");
             continue;
         }
 
         if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) 
         {
             close(sockfd);
-            perror("UDPserver: bind");
+            perror("Server: bind");
             continue;
         }
-
         break;
     }
 
     if (p == NULL) 
     {
-        fprintf(stderr, "UDPserver: failed to bind socket\n");
+        fprintf(stderr, "Server: failed to bind socket\n");
     }
 
     /* Set default values */
@@ -102,22 +102,27 @@ void dispatch_factory_lines()
 
 	clientID = 1;
 	linesActive = 5;
+	linesWaiting = 0;
 
-	while (linesActive > 0)
+	while (linesActive > 0 || linesWaiting > 0)
 	{
+		printf("[Server]: Waiting for message...\n");
 		recvfrom(sockfd, &message, MSG_SIZE , 0, (struct sockaddr *)&their_addr, &addr_len);
+		printf("[Server]: Received message type (%d).\n", message.mtype);
 
 		if (message.mtype == 01)
 		{
 			message.mtype = 11;
 			message.info.id = clientID;
 			message.info.num_items = random() % 41 + 10; /* capacity for that client */
-			message.info.iteration = random() % 5 + 1; /* duration for that client */
+			message.info.iteration = random() % 4001 + 1000; /* duration for that client */
 			clientID++;
+			printf("[Server]: Sending client (%d) capacity of %d and duration of %dms.\n", 
+				message.info.id, message.info.num_items, message.info.iteration);
 		}
-		if (message.mtype == 02)
+		if (message.mtype == 02) /* Client wants to make stuff */
 		{
-			if(order_size == 0)
+			if(order_size == 0) /* Can't make any more stuff */
 			{
 				message.mtype = 13; /* Stop the client from running anymore */
 				linesActive--;
@@ -129,17 +134,26 @@ void dispatch_factory_lines()
 				{
 					message.info.num_items = order_size;
 				}
-				order_size -= message.info.num_items;
+					order_size -= message.info.num_items;
+					linesWaiting++; 
 			}
 		}
-		if (message.mtype == 03)
+		if (message.mtype == 03) /* Line finished making stuff */
 		{
 			aggregs[message.info.id].num_items += message.info.num_items;
 			aggregs[message.info.id].iteration = message.info.iteration;
+			linesWaiting--;
 		}
+
 		/* Send the message */
 		sendto(sockfd, (const void *)&message, MSG_SIZE, 0, (const struct sockaddr*)&their_addr, addr_len); 
     }
+
+    for(i = 0; i < 5; i++)
+	{
+		printf("Number of Items: %d\n", aggregs[i].num_items);
+		printf("Number of iterations: %d\n", aggregs[i].iteration);
+	}
 }
 
 void shut_down_factory_lines()
